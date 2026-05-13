@@ -43,8 +43,12 @@ def main():
 
     panel_rect = pygame.Rect(WIDTH - PANEL_W, 0, PANEL_W, HEIGHT)
     px = panel_rect.x + 16
-    btn_create = Button(px, 200, PANEL_W - 32, 40, "Create", BUTTON_GREEN, BUTTON_GREEN_HOVER)
-    btn_delete = Button(px, 250, PANEL_W - 32, 40, "Delete", BUTTON_RED, BUTTON_RED_HOVER)
+    btn_create = Button(
+        px, 200, PANEL_W - 32, 40, "Create", BUTTON_GREEN, BUTTON_GREEN_HOVER
+    )
+    btn_delete = Button(
+        px, 250, PANEL_W - 32, 40, "Delete", BUTTON_RED, BUTTON_RED_HOVER
+    )
 
     mode = "idle"
     vertices = []
@@ -72,7 +76,7 @@ def main():
                     input_y.active = False
                     input_y.color = INPUT_BORDER
 
-                if btn_draw.handle_event(event):
+                if btn_draw.is_clicked(event):
                     dx = input_x.value()
                     dy = input_y.value()
                     if dx <= 0 or dy <= 0:
@@ -83,7 +87,14 @@ def main():
                         dim_x = dx
                         dim_y = dy
                         error_msg = ""
-                        gp = GridParams(dim_x, dim_y, WIDTH - PANEL_W - 2 * GRID_MARGIN, HEIGHT - 2 * GRID_MARGIN, GRID_MARGIN, GRID_MARGIN)
+                        gp = GridParams(
+                            dim_x,
+                            dim_y,
+                            WIDTH - PANEL_W - 2 * GRID_MARGIN,
+                            HEIGHT - 2 * GRID_MARGIN,
+                            GRID_MARGIN,
+                            GRID_MARGIN,
+                        )
                         mode = "idle"
                         vertices = []
                         hovered_point = None
@@ -96,7 +107,14 @@ def main():
                         dim_x = dx
                         dim_y = dy
                         error_msg = ""
-                        gp = GridParams(dim_x, dim_y, WIDTH - PANEL_W - 2 * GRID_MARGIN, HEIGHT - 2 * GRID_MARGIN, GRID_MARGIN, GRID_MARGIN)
+                        gp = GridParams(
+                            dim_x,
+                            dim_y,
+                            WIDTH - PANEL_W - 2 * GRID_MARGIN,
+                            HEIGHT - 2 * GRID_MARGIN,
+                            GRID_MARGIN,
+                            GRID_MARGIN,
+                        )
                         mode = "idle"
                         vertices = []
                         hovered_point = None
@@ -106,16 +124,20 @@ def main():
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     state = "input"
 
-                if btn_create.handle_event(event):
+                if btn_create.is_clicked(event):
                     vertices = []
                     mode = "creating"
                     hovered_point = None
 
-                if btn_delete.handle_event(event):
+                if btn_delete.is_clicked(event):
                     if mode == "creating" and len(vertices) > 0:
                         vertices.pop()
 
-                if mode == "creating" and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if (
+                    mode == "creating"
+                    and event.type == pygame.MOUSEBUTTONDOWN
+                    and event.button == 1
+                ):
                     if not panel_rect.collidepoint(event.pos):
                         snapped = gp.snap(*event.pos)
                         if snapped is not None:
