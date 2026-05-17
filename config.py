@@ -38,3 +38,11 @@ BUTTON_GREEN = (50, 160, 80)
 BUTTON_GREEN_HOVER = (70, 185, 100)
 BUTTON_RED = (200, 60, 60)
 BUTTON_RED_HOVER = (220, 80, 80)
+
+VERTEX_TYPE_COLORS = {
+    "start": (0, 180, 80),
+    "end": (0, 120, 200),
+    "split": (220, 60, 60),
+    "merge": (180, 60, 200),
+    "regular": (120, 120, 120),
+}
