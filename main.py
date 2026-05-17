@@ -21,6 +21,8 @@ from panel import draw_panel
 from polygon import draw_polygon
 from screens import draw_input_screen
 from sweep import make_monotone
+from tutorial import TutorialState
+from tutorial_panel import compute_tutorial_hover, draw_tutorial_panel
 from ui import Button, InputBox
 
 GRID_AREA_W = 960 - PANEL_W - 2 * GRID_MARGIN
@@ -28,6 +30,8 @@ GRID_AREA_H = 720 - 2 * GRID_MARGIN
 MAX_DIM = 200
 GRID_W = 960
 GRID_H = 720
+TUTORIAL_PANEL_H = 440
+WINDOW_H = GRID_H + TUTORIAL_PANEL_H
 
 
 def analyze(vertices):
@@ -58,7 +62,7 @@ def _reset_polygon():
 class App:
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((GRID_W, GRID_H))
+        self.screen = pygame.display.set_mode((GRID_W, WINDOW_H))
         pygame.display.set_caption("Polygon Triangulation Tutorial")
         self.clock = pygame.time.Clock()
 
@@ -68,9 +72,16 @@ class App:
         self.btn_draw = Button(cx - 80, 460, 160, 48, "Draw")
 
         self.panel_rect = pygame.Rect(GRID_W - PANEL_W, 0, PANEL_W, GRID_H)
+        self.tutorial_panel_rect = pygame.Rect(0, GRID_H, GRID_W, TUTORIAL_PANEL_H)
         px = self.panel_rect.x + 16
+
         self.btn_create = Button(px, 200, PANEL_W - 32, 40, "Create", BUTTON_GREEN, BUTTON_GREEN_HOVER)
         self.btn_delete = Button(px, 250, PANEL_W - 32, 40, "Delete", BUTTON_RED, BUTTON_RED_HOVER)
+        self.btn_tutorial = Button(px, 360, PANEL_W - 32, 40, "Tutorial")
+
+        self.btn_prev = Button(16, GRID_H + TUTORIAL_PANEL_H - 50, 88, 32, "< Prev", BUTTON_GREEN, BUTTON_GREEN_HOVER)
+        self.btn_next = Button(114, GRID_H + TUTORIAL_PANEL_H - 50, 88, 32, "Next >", BUTTON_GREEN, BUTTON_GREEN_HOVER)
+        self.btn_exit = Button(216, GRID_H + TUTORIAL_PANEL_H - 50, 88, 32, "Exit")
 
         self.state = "input"
         self.dim_x = 0.0
@@ -82,6 +93,8 @@ class App:
         self.hovered_point = None
         self.vertex_labels = None
         self.diagonals = None
+        self.tutorial = None
+        self.hover_highlight = None
 
     def _try_start_grid(self):
         dx = self.input_x.value()
@@ -97,6 +110,7 @@ class App:
         self.state = "grid"
         self.mode = "idle"
         self.vertices, self.vertex_labels, self.diagonals = _reset_polygon()
+        self.tutorial = None
 
     def _handle_start_screen(self, event: Event):
         self.input_x.handle_event(event)
@@ -120,12 +134,20 @@ class App:
 
     def _handle_grid_loop(self, event: Event):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if self.tutorial:
+                self._exit_tutorial()
+                return
             self.state = "input"
+            return
+
+        if self.tutorial:
+            self._handle_tutorial(event)
             return
 
         if self.btn_create.handle_event(event):
             self.mode = "creating"
             self.vertices, self.vertex_labels, self.diagonals = _reset_polygon()
+            self.tutorial = None
             return
 
         if self.btn_delete.handle_event(event):
@@ -142,15 +164,44 @@ class App:
             if len(self.vertices) >= 3 and snapped == self.vertices[0]:
                 self.mode = "done"
                 self.vertices, self.vertex_labels, self.diagonals = analyze(self.vertices)
+                self.tutorial = None
             elif snapped not in self.vertices:
                 self.vertices.append(snapped)
 
+        if self.mode == "done" and self.btn_tutorial.handle_event(event):
+            self._start_tutorial()
+
+    def _start_tutorial(self):
+        self.tutorial = TutorialState.create(self.vertices)
+        self.state = "grid"
+        self.mode = "tutorial"
+
+    def _exit_tutorial(self):
+        self.tutorial = None
+        self.mode = "done"
+        self.hover_highlight = None
+
+    def _handle_tutorial(self, event: Event):
+        if self.btn_prev.handle_event(event):
+            if not self.tutorial.at_start():
+                self.tutorial.undo()
+        if self.btn_next.handle_event(event):
+            self.tutorial.advance()
+        if self.btn_exit.handle_event(event):
+            self._exit_tutorial()
+
     def _update_hover(self, mouse_pos):
+        self.mouse_pos = mouse_pos
         self.hovered_point = None
+        self.hover_highlight = None
         if self.mode == "creating" and not self.panel_rect.collidepoint(mouse_pos):
             snapped = self.gp.snap(*mouse_pos)
             if snapped is not None:
                 self.hovered_point = snapped
+        if self.mode == "tutorial" and self.tutorial:
+            self.hover_highlight = compute_tutorial_hover(
+                self.tutorial, mouse_pos, self.tutorial_panel_rect,
+            )
 
     def _draw(self):
         if self.state == "input":
@@ -158,15 +209,40 @@ class App:
         elif self.state == "grid":
             self.screen.fill((255, 255, 255))
             draw_grid(self.screen, self.gp)
+
+            tutorial = None
+            diags = self.diagonals
+            if self.mode == "tutorial" and self.tutorial:
+                tutorial = self.tutorial.preview()
+                diags = self.tutorial.diagonals
+
             draw_polygon(
                 self.screen, self.gp, self.vertices,
-                self.mode == "done", self.hovered_point,
-                self.vertex_labels, self.diagonals,
+                self.mode in ("done", "tutorial"), self.hovered_point,
+                self.vertex_labels, diags,
+                tutorial=tutorial,
+                hover_highlight=self.hover_highlight,
             )
+
             title_font = pygame.font.SysFont("Arial", 18, bold=True)
             title = title_font.render(f"Plane {self.dim_x} x {self.dim_y}", True, TITLE_COLOR)
             self.screen.blit(title, (GRID_MARGIN, 10))
-            draw_panel(self.screen, self.panel_rect, self.mode, self.vertices, self.btn_create, self.btn_delete)
+
+            if self.mode == "tutorial" and self.tutorial:
+                draw_panel(
+                    self.screen, self.panel_rect, "tutorial", self.vertices,
+                    self.btn_create, self.btn_delete,
+                )
+                draw_tutorial_panel(
+                    self.screen, self.tutorial_panel_rect, self.tutorial,
+                    self.btn_prev, self.btn_next, self.btn_exit,
+                    hover_keys=self.hover_highlight,
+                )
+            else:
+                draw_panel(
+                    self.screen, self.panel_rect, self.mode, self.vertices,
+                    self.btn_create, self.btn_delete, self.btn_tutorial,
+                )
 
     def run(self):
         while True:

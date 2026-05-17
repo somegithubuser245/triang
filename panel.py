@@ -2,7 +2,6 @@ import pygame
 
 from config import (
     DARK_GRAY,
-    HEIGHT,
     HINT_COLOR,
     PANEL_BG,
     PANEL_BORDER,
@@ -11,11 +10,13 @@ from config import (
     VERTEX_TYPE_COLORS,
     WHITE,
 )
+from ui import Button
 
 
-def draw_panel(screen, panel_rect, mode, vertices, btn_create, btn_delete):
+def draw_panel(screen, panel_rect, mode, vertices, btn_create: Button, btn_delete: Button,
+               btn_tutorial: Button = None):
     pygame.draw.rect(screen, PANEL_BG, panel_rect)
-    pygame.draw.line(screen, PANEL_BORDER, (panel_rect.x, 0), (panel_rect.x, HEIGHT), 2)
+    pygame.draw.line(screen, PANEL_BORDER, (panel_rect.x, 0), (panel_rect.x, panel_rect.height), 2)
 
     x = panel_rect.x + 16
     title_font = pygame.font.SysFont("Arial", 18, bold=True)
@@ -39,7 +40,7 @@ def draw_panel(screen, panel_rect, mode, vertices, btn_create, btn_delete):
             "",
             f"Vertices: {len(vertices)}",
         ]
-    elif mode == "done":
+    elif mode in ("done", "tutorial"):
         lines = [
             "Polygon complete!",
             f"Vertices: {len(vertices)}",
@@ -55,8 +56,11 @@ def draw_panel(screen, panel_rect, mode, vertices, btn_create, btn_delete):
         screen.blit(surf, (x, y))
         y += 20
 
-    btn_create.draw(screen, enabled=(mode != "creating"))
+    btn_create.draw(screen, enabled=(mode not in ("creating", "tutorial")))
     btn_delete.draw(screen, enabled=(mode == "creating" and len(vertices) > 0))
+
+    if btn_tutorial and mode != "tutorial":
+        btn_tutorial.draw(screen, enabled=(mode == "done"))
 
     if mode == "creating" and len(vertices) >= 3:
         close_hint = small_font.render("Click 1st vertex to close", True, VERTEX_DONE_COLOR)
