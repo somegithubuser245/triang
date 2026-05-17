@@ -1,6 +1,7 @@
 import sys
 
 import pygame
+from pygame.event import Event
 
 from config import (
     BUTTON_GREEN,
@@ -13,158 +14,178 @@ from config import (
     INPUT_BORDER,
     PANEL_W,
     TITLE_COLOR,
-    WHITE,
-    WIDTH,
 )
-from geometry import Vec2, classify_polygon, is_ccw
+from geometry import Vec2, classify_polygon, ensure_ccw
 from grid import GridParams, draw_grid
 from panel import draw_panel
 from polygon import draw_polygon
 from screens import draw_input_screen
+from sweep import make_monotone
 from ui import Button, InputBox
 
+GRID_AREA_W = 960 - PANEL_W - 2 * GRID_MARGIN
+GRID_AREA_H = 720 - 2 * GRID_MARGIN
+MAX_DIM = 200
+GRID_W = 960
+GRID_H = 720
 
-def _compute_labels(vertices):
+
+def analyze(vertices):
     vecs = [Vec2(gx, gy) for gx, gy in vertices]
-    ccw = is_ccw(vecs)
-    if not ccw:
-        vecs = list(reversed(vecs))
-    labels = classify_polygon(vecs)
-    if not ccw:
-        labels = list(reversed(labels))
-    return labels
+    ccw = ensure_ccw(vecs)
+    ccw_tuples = [(v.x, v.y) for v in ccw]
+    labels = classify_polygon(ccw)
+    diags = make_monotone(ccw)
+    return ccw_tuples, labels, diags
 
 
-def main():
-    pygame.init()
-    screen = pygame.display.set_mode((960, 720))
-    pygame.display.set_caption("Polygon Triangulation Tutorial")
-    clock = pygame.time.Clock()
+def _validate_dims(dx, dy):
+    if dx <= 0 or dy <= 0:
+        return "Please enter positive values for both dimensions."
+    if dx > MAX_DIM or dy > MAX_DIM:
+        return f"Maximum dimension is {MAX_DIM}."
+    return None
 
-    state = "input"
 
-    cx = 960 // 2
-    input_x = InputBox(cx - 130, 280, 260, 40, label="Width (X)", hint="e.g. 20")
-    input_y = InputBox(cx - 130, 370, 260, 40, label="Height (Y)", hint="e.g. 20")
-    btn_draw = Button(cx - 80, 460, 160, 48, "Draw")
+def _make_grid_params(dx, dy):
+    return GridParams(dx, dy, GRID_AREA_W, GRID_AREA_H, GRID_MARGIN, GRID_MARGIN)
 
-    dim_x = dim_y = 0.0
-    gp = None
-    error_msg = ""
 
-    panel_rect = pygame.Rect(960 - 220, 0, 220, 720)
-    px = panel_rect.x + 16
-    btn_create = Button(px, 200, 220 - 32, 40, "Create", BUTTON_GREEN, BUTTON_GREEN_HOVER)
-    btn_delete = Button(px, 250, 220 - 32, 40, "Delete", BUTTON_RED, BUTTON_RED_HOVER)
+def _reset_polygon():
+    return [], None, None
 
-    mode = "idle"
-    vertices = []
-    hovered_point = None
-    vertex_labels = None
 
-    while True:
-        mouse_pos = pygame.mouse.get_pos()
+class App:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((GRID_W, GRID_H))
+        pygame.display.set_caption("Polygon Triangulation Tutorial")
+        self.clock = pygame.time.Clock()
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+        cx = GRID_W // 2
+        self.input_x = InputBox(cx - 130, 280, 260, 40, label="Width (X)", hint="e.g. 20")
+        self.input_y = InputBox(cx - 130, 370, 260, 40, label="Height (Y)", hint="e.g. 20")
+        self.btn_draw = Button(cx - 80, 460, 160, 48, "Draw")
 
-            if state == "input":
-                result_x = input_x.handle_event(event)
-                result_y = input_y.handle_event(event)
+        self.panel_rect = pygame.Rect(GRID_W - PANEL_W, 0, PANEL_W, GRID_H)
+        px = self.panel_rect.x + 16
+        self.btn_create = Button(px, 200, PANEL_W - 32, 40, "Create", BUTTON_GREEN, BUTTON_GREEN_HOVER)
+        self.btn_delete = Button(px, 250, PANEL_W - 32, 40, "Delete", BUTTON_RED, BUTTON_RED_HOVER)
 
-                if result_x == "next":
-                    input_x.active = False
-                    input_x.color = INPUT_BORDER
-                    input_y.active = True
-                    input_y.color = INPUT_ACTIVE_BORDER
+        self.state = "input"
+        self.dim_x = 0.0
+        self.dim_y = 0.0
+        self.gp = None
+        self.error_msg = ""
+        self.mode = "idle"
+        self.vertices = []
+        self.hovered_point = None
+        self.vertex_labels = None
+        self.diagonals = None
 
-                if result_y == "next":
-                    input_y.active = False
-                    input_y.color = INPUT_BORDER
+    def _try_start_grid(self):
+        dx = self.input_x.value()
+        dy = self.input_y.value()
+        err = _validate_dims(dx, dy)
+        if err:
+            self.error_msg = err
+            return
+        self.dim_x = dx
+        self.dim_y = dy
+        self.error_msg = ""
+        self.gp = _make_grid_params(dx, dy)
+        self.state = "grid"
+        self.mode = "idle"
+        self.vertices, self.vertex_labels, self.diagonals = _reset_polygon()
 
-                if btn_draw.handle_event(event):
-                    dx = input_x.value()
-                    dy = input_y.value()
-                    if dx <= 0 or dy <= 0:
-                        error_msg = "Please enter positive values for both dimensions."
-                    elif dx > 200 or dy > 200:
-                        error_msg = "Maximum dimension is 200."
-                    else:
-                        dim_x = dx
-                        dim_y = dy
-                        error_msg = ""
-                        gp = GridParams(dim_x, dim_y, 960 - 220 - 2 * GRID_MARGIN, 720 - 2 * GRID_MARGIN, GRID_MARGIN, GRID_MARGIN)
-                        mode = "idle"
-                        vertices = []
-                        hovered_point = None
-                        vertex_labels = None
-                        state = "grid"
+    def _handle_start_screen(self, event: Event):
+        self.input_x.handle_event(event)
+        self.input_y.handle_event(event)
 
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
-                    dx = input_x.value()
-                    dy = input_y.value()
-                    if dx > 0 and dy > 0 and dx <= 200 and dy <= 200:
-                        dim_x = dx
-                        dim_y = dy
-                        error_msg = ""
-                        gp = GridParams(dim_x, dim_y, 960 - 220 - 2 * GRID_MARGIN, 720 - 2 * GRID_MARGIN, GRID_MARGIN, GRID_MARGIN)
-                        mode = "idle"
-                        vertices = []
-                        hovered_point = None
-                        vertex_labels = None
-                        state = "grid"
+        if self.input_x.active and event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+            self.input_x.active = False
+            self.input_x.color = INPUT_BORDER
+            self.input_y.active = True
+            self.input_y.color = INPUT_ACTIVE_BORDER
+            return
 
-            elif state == "grid":
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    state = "input"
+        if self.input_y.active and event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+            self.input_y.active = False
+            self.input_y.color = INPUT_BORDER
+            self._try_start_grid()
+            return
 
-                if btn_create.handle_event(event):
-                    vertices = []
-                    mode = "creating"
-                    hovered_point = None
-                    vertex_labels = None
+        if self.btn_draw.handle_event(event):
+            self._try_start_grid()
 
-                if btn_delete.handle_event(event):
-                    if mode == "creating" and len(vertices) > 0:
-                        vertices.pop()
+    def _handle_grid_loop(self, event: Event):
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.state = "input"
+            return
 
-                if mode == "creating" and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if not panel_rect.collidepoint(event.pos):
-                        snapped = gp.snap(*event.pos)
-                        if snapped is not None:
-                            if len(vertices) >= 3 and snapped == vertices[0]:
-                                mode = "done"
-                                vertex_labels = _compute_labels(vertices)
-                            else:
-                                if snapped not in vertices:
-                                    vertices.append(snapped)
+        if self.btn_create.handle_event(event):
+            self.mode = "creating"
+            self.vertices, self.vertex_labels, self.diagonals = _reset_polygon()
+            return
 
-        if state == "input":
-            draw_input_screen(screen, input_x, input_y, btn_draw, error_msg)
-        elif state == "grid":
-            screen.fill(WHITE)
-            draw_grid(screen, gp)
+        if self.btn_delete.handle_event(event):
+            if self.mode == "creating" and self.vertices:
+                self.vertices.pop()
+            return
 
-            if mode == "creating":
-                hovered_point = None
-                if not panel_rect.collidepoint(mouse_pos):
-                    snapped = gp.snap(*mouse_pos)
-                    if snapped is not None:
-                        hovered_point = snapped
+        if self.mode == "creating" and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.panel_rect.collidepoint(event.pos):
+                return
+            snapped = self.gp.snap(*event.pos)
+            if snapped is None:
+                return
+            if len(self.vertices) >= 3 and snapped == self.vertices[0]:
+                self.mode = "done"
+                self.vertices, self.vertex_labels, self.diagonals = analyze(self.vertices)
+            elif snapped not in self.vertices:
+                self.vertices.append(snapped)
 
-            draw_polygon(screen, gp, vertices, mode == "done", hovered_point, vertex_labels)
+    def _update_hover(self, mouse_pos):
+        self.hovered_point = None
+        if self.mode == "creating" and not self.panel_rect.collidepoint(mouse_pos):
+            snapped = self.gp.snap(*mouse_pos)
+            if snapped is not None:
+                self.hovered_point = snapped
 
+    def _draw(self):
+        if self.state == "input":
+            draw_input_screen(self.screen, self.input_x, self.input_y, self.btn_draw, self.error_msg)
+        elif self.state == "grid":
+            self.screen.fill((255, 255, 255))
+            draw_grid(self.screen, self.gp)
+            draw_polygon(
+                self.screen, self.gp, self.vertices,
+                self.mode == "done", self.hovered_point,
+                self.vertex_labels, self.diagonals,
+            )
             title_font = pygame.font.SysFont("Arial", 18, bold=True)
-            title = title_font.render(f"Plane {dim_x} x {dim_y}", True, TITLE_COLOR)
-            screen.blit(title, (GRID_MARGIN, 10))
+            title = title_font.render(f"Plane {self.dim_x} x {self.dim_y}", True, TITLE_COLOR)
+            self.screen.blit(title, (GRID_MARGIN, 10))
+            draw_panel(self.screen, self.panel_rect, self.mode, self.vertices, self.btn_create, self.btn_delete)
 
-            draw_panel(screen, panel_rect, mode, vertices, btn_create, btn_delete)
+    def run(self):
+        while True:
+            mouse_pos = pygame.mouse.get_pos()
 
-        pygame.display.flip()
-        clock.tick(FPS)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if self.state == "input":
+                    self._handle_start_screen(event)
+                elif self.state == "grid":
+                    self._handle_grid_loop(event)
+
+            self._update_hover(mouse_pos)
+            self._draw()
+            pygame.display.flip()
+            self.clock.tick(FPS)
 
 
 if __name__ == "__main__":
-    main()
+    App().run()

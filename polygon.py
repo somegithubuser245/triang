@@ -2,6 +2,7 @@ import pygame
 
 from config import (
     ACCENT,
+    DIAGONAL_COLOR,
     EDGE_COLOR,
     EDGE_DONE_COLOR,
     LABEL_BG_COLOR,
@@ -14,7 +15,7 @@ from config import (
 )
 
 
-def draw_polygon(screen, gp, vertices, done, hovered_point, vertex_labels=None):
+def draw_polygon(screen, gp, vertices, done, hovered_point, vertex_labels=None, diagonals=None):
     n = len(vertices)
     if n < 1:
         return
@@ -28,6 +29,10 @@ def draw_polygon(screen, gp, vertices, done, hovered_point, vertex_labels=None):
         pygame.draw.line(screen, edge_color, pts[i], pts[i + 1], 3)
     if done and n >= 3:
         pygame.draw.line(screen, edge_color, pts[-1], pts[0], 3)
+
+    if done and diagonals:
+        for a, b in diagonals:
+            pygame.draw.line(screen, DIAGONAL_COLOR, pts[a], pts[b], 2)
 
     for i, (px, py) in enumerate(pts):
         is_hovered = hovered_point == vertices[i]

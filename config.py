@@ -46,3 +46,5 @@ VERTEX_TYPE_COLORS = {
     "merge": (180, 60, 200),
     "regular": (120, 120, 120),
 }
+
+DIAGONAL_COLOR = (200, 130, 30)

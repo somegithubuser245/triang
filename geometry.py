@@ -109,14 +109,32 @@ def ensure_ccw(vertices: list[Vec2]) -> list[Vec2]:
     return list(vertices)
 
 
-def classify_vertex(prev: Vec2, curr: Vec2, succ: Vec2) -> str:
-    above_prev = curr.y > prev.y
-    above_succ = curr.y > succ.y
-    below_prev = curr.y < prev.y
-    below_succ = curr.y < succ.y
+def above(a: Vec2, b: Vec2) -> bool:
+    """
+    a above b
+    """
+    if a.y != b.y:
+        return a.y > b.y
+    return a.x < b.x
 
-    y_max = above_prev and above_succ
-    y_min = below_prev and below_succ
+
+def below(a: Vec2, b: Vec2) -> bool:
+    """
+    a below b
+    """
+    if a.y != b.y:
+        return a.y < b.y
+    return a.x > b.x
+
+
+def classify_vertex(prev: Vec2, curr: Vec2, succ: Vec2) -> str:
+    is_above_prev = above(curr, prev)
+    is_above_succ = above(curr, succ)
+    is_below_prev = below(curr, prev)
+    is_below_succ = below(curr, succ)
+
+    y_max = is_above_prev and is_above_succ
+    y_min = is_below_prev and is_below_succ
 
     turn = orientation(prev, curr, succ)
 
