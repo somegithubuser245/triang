@@ -1,6 +1,6 @@
 import pygame
 
-from config import AXIS_COLOR, GRID_LINE, SNAP_RADIUS
+from config import AXIS_COLOR, GRID_LINE, SNAP_RADIUS, UI_SCALE
 
 
 class GridParams:
@@ -54,15 +54,21 @@ def draw_grid(screen, gp):
     pygame.draw.line(screen, AXIS_COLOR, (gp.origin_x, gp.origin_y), (gp.origin_x, gp.origin_y + gp.grid_h), 2)
     pygame.draw.line(screen, AXIS_COLOR, (gp.origin_x, gp.origin_y + gp.grid_h), (gp.origin_x + gp.grid_w, gp.origin_y + gp.grid_h), 2)
 
-    axis_font = pygame.font.SysFont("Arial", 13)
+    axis_font = pygame.font.SysFont("Arial", int(13 * UI_SCALE))
 
     step = max(1, _label_step(gp.dim_x, 20))
     i = 0
     while i <= gp.dim_x:
         x = gp.origin_x + i * gp.cell
         label = axis_font.render(str(int(i)) if i == int(i) else f"{i:.1f}", True, AXIS_COLOR)
-        screen.blit(label, (x - label.get_width() // 2, gp.origin_y + gp.grid_h + 6))
-        pygame.draw.line(screen, AXIS_COLOR, (x, gp.origin_y + gp.grid_h), (x, gp.origin_y + gp.grid_h + 5), 2)
+        screen.blit(label, (x - label.get_width() // 2, gp.origin_y + gp.grid_h + int(6 * UI_SCALE)))
+        pygame.draw.line(
+            screen,
+            AXIS_COLOR,
+            (x, gp.origin_y + gp.grid_h),
+            (x, gp.origin_y + gp.grid_h + int(5 * UI_SCALE)),
+            max(1, int(2 * UI_SCALE)),
+        )
         i += step
 
     step = max(1, _label_step(gp.dim_y, 15))
@@ -70,6 +76,12 @@ def draw_grid(screen, gp):
     while j <= gp.dim_y:
         y = gp.origin_y + gp.grid_h - j * gp.cell
         label = axis_font.render(str(int(j)) if j == int(j) else f"{j:.1f}", True, AXIS_COLOR)
-        screen.blit(label, (gp.origin_x - label.get_width() - 8, y - label.get_height() // 2))
-        pygame.draw.line(screen, AXIS_COLOR, (gp.origin_x - 5, y), (gp.origin_x, y), 2)
+        screen.blit(label, (gp.origin_x - label.get_width() - int(8 * UI_SCALE), y - label.get_height() // 2))
+        pygame.draw.line(
+            screen,
+            AXIS_COLOR,
+            (gp.origin_x - int(5 * UI_SCALE), y),
+            (gp.origin_x, y),
+            max(1, int(2 * UI_SCALE)),
+        )
         j += step

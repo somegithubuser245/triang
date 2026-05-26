@@ -1,5 +1,7 @@
 import pygame
 
+from config import UI_SCALE
+
 from config import (
     ACCENT,
     BLACK,
@@ -23,9 +25,9 @@ class InputBox:
         self.label = label
         self.hint = hint
         self.active = False
-        self.font = pygame.font.SysFont("Arial", 20)
-        self.label_font = pygame.font.SysFont("Arial", 16)
-        self.hint_font = pygame.font.SysFont("Arial", 14)
+        self.font = pygame.font.SysFont("Arial", int(20 * UI_SCALE))
+        self.label_font = pygame.font.SysFont("Arial", int(16 * UI_SCALE))
+        self.hint_font = pygame.font.SysFont("Arial", int(14 * UI_SCALE))
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -43,14 +45,15 @@ class InputBox:
     def draw(self, screen):
         if self.label:
             lbl = self.label_font.render(self.label, True, LABEL_COLOR)
-            screen.blit(lbl, (self.rect.x, self.rect.y - 24))
+            screen.blit(lbl, (self.rect.x, self.rect.y - int(24 * UI_SCALE)))
         if self.hint and not self.text:
             hint_surf = self.hint_font.render(self.hint, True, HINT_COLOR)
-            screen.blit(hint_surf, (self.rect.x + 10, self.rect.y + 8))
-        pygame.draw.rect(screen, INPUT_BG, self.rect, border_radius=6)
-        pygame.draw.rect(screen, self.color, self.rect, 2, border_radius=6)
+            screen.blit(hint_surf, (self.rect.x + int(10 * UI_SCALE), self.rect.y + int(8 * UI_SCALE)))
+        radius = max(1, int(6 * UI_SCALE))
+        pygame.draw.rect(screen, INPUT_BG, self.rect, border_radius=radius)
+        pygame.draw.rect(screen, self.color, self.rect, max(1, int(2 * UI_SCALE)), border_radius=radius)
         txt_surf = self.font.render(self.text, True, BLACK)
-        screen.blit(txt_surf, (self.rect.x + 10, self.rect.y + 6))
+        screen.blit(txt_surf, (self.rect.x + int(10 * UI_SCALE), self.rect.y + int(6 * UI_SCALE)))
 
     def value(self):
         try:
@@ -63,7 +66,7 @@ class Button:
     def __init__(self, x, y, w, h, text, color=ACCENT, hover=BUTTON_HOVER):
         self.rect = pygame.Rect(x, y, w, h)
         self.text = text
-        self.font = pygame.font.SysFont("Arial", 18, bold=True)
+        self.font = pygame.font.SysFont("Arial", int(18 * UI_SCALE), bold=True)
         self.hovered = False
         self.color = color
         self.hover = hover
@@ -77,11 +80,11 @@ class Button:
 
     def draw(self, screen, enabled=True):
         if not enabled:
-            pygame.draw.rect(screen, GRAY, self.rect, border_radius=8)
+            pygame.draw.rect(screen, GRAY, self.rect, border_radius=max(1, int(8 * UI_SCALE)))
             txt_surf = self.font.render(self.text, True, DARK_GRAY)
         else:
             color = self.hover if self.hovered else self.color
-            pygame.draw.rect(screen, color, self.rect, border_radius=8)
+            pygame.draw.rect(screen, color, self.rect, border_radius=max(1, int(8 * UI_SCALE)))
             txt_surf = self.font.render(self.text, True, WHITE)
         txt_rect = txt_surf.get_rect(center=self.rect.center)
         screen.blit(txt_surf, txt_rect)

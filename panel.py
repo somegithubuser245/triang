@@ -6,6 +6,7 @@ from config import (
     PANEL_BG,
     PANEL_BORDER,
     TITLE_COLOR,
+    UI_SCALE,
     VERTEX_DONE_COLOR,
     VERTEX_TYPE_COLORS,
     WHITE,
@@ -16,18 +17,24 @@ from ui import Button
 def draw_panel(screen, panel_rect, mode, vertices, btn_create: Button, btn_delete: Button,
                btn_tutorial: Button = None):
     pygame.draw.rect(screen, PANEL_BG, panel_rect)
-    pygame.draw.line(screen, PANEL_BORDER, (panel_rect.x, 0), (panel_rect.x, panel_rect.height), 2)
+    pygame.draw.line(
+        screen,
+        PANEL_BORDER,
+        (panel_rect.x, 0),
+        (panel_rect.x, panel_rect.height),
+        max(1, int(2 * UI_SCALE)),
+    )
 
-    x = panel_rect.x + 16
-    title_font = pygame.font.SysFont("Arial", 18, bold=True)
-    info_font = pygame.font.SysFont("Arial", 14)
-    small_font = pygame.font.SysFont("Arial", 13)
-    legend_font = pygame.font.SysFont("Arial", 12, bold=True)
+    x = panel_rect.x + int(16 * UI_SCALE)
+    title_font = pygame.font.SysFont("Arial", int(18 * UI_SCALE), bold=True)
+    info_font = pygame.font.SysFont("Arial", int(14 * UI_SCALE))
+    small_font = pygame.font.SysFont("Arial", int(13 * UI_SCALE))
+    legend_font = pygame.font.SysFont("Arial", int(12 * UI_SCALE), bold=True)
 
     title = title_font.render("Polygon Editor", True, TITLE_COLOR)
-    screen.blit(title, (x, 20))
+    screen.blit(title, (x, int(20 * UI_SCALE)))
 
-    y = 58
+    y = int(58 * UI_SCALE)
     if mode == "idle":
         lines = ["Click Create to start", "drawing a polygon.", "", "Click grid intersections", "to place vertices."]
     elif mode == "creating":
@@ -54,7 +61,7 @@ def draw_panel(screen, panel_rect, mode, vertices, btn_create: Button, btn_delet
     for line in lines:
         surf = info_font.render(line, True, DARK_GRAY)
         screen.blit(surf, (x, y))
-        y += 20
+        y += int(20 * UI_SCALE)
 
     btn_create.draw(screen, enabled=(mode not in ("creating", "tutorial")))
     btn_delete.draw(screen, enabled=(mode == "creating" and len(vertices) > 0))
@@ -64,19 +71,25 @@ def draw_panel(screen, panel_rect, mode, vertices, btn_create: Button, btn_delet
 
     if mode == "creating" and len(vertices) >= 3:
         close_hint = small_font.render("Click 1st vertex to close", True, VERTEX_DONE_COLOR)
-        screen.blit(close_hint, (x, panel_rect.bottom - 120))
+        screen.blit(close_hint, (x, panel_rect.bottom - int(120 * UI_SCALE)))
 
     if mode == "done":
-        y_legend = panel_rect.bottom - 130
+        y_legend = panel_rect.bottom - int(130 * UI_SCALE)
         legend_title = small_font.render("Vertex types:", True, DARK_GRAY)
         screen.blit(legend_title, (x, y_legend))
-        y_legend += 18
+        y_legend += int(18 * UI_SCALE)
         for name, color in VERTEX_TYPE_COLORS.items():
-            pygame.draw.circle(screen, color, (x + 8, y_legend + 7), 6)
-            pygame.draw.circle(screen, WHITE, (x + 8, y_legend + 7), 6, 1)
+            pygame.draw.circle(screen, color, (x + int(8 * UI_SCALE), y_legend + int(7 * UI_SCALE)), max(1, int(6 * UI_SCALE)))
+            pygame.draw.circle(
+                screen,
+                WHITE,
+                (x + int(8 * UI_SCALE), y_legend + int(7 * UI_SCALE)),
+                max(1, int(6 * UI_SCALE)),
+                max(1, int(1 * UI_SCALE)),
+            )
             label = legend_font.render(name.capitalize(), True, DARK_GRAY)
-            screen.blit(label, (x + 22, y_legend))
-            y_legend += 18
+            screen.blit(label, (x + int(22 * UI_SCALE), y_legend))
+            y_legend += int(18 * UI_SCALE)
 
     esc_hint = small_font.render("ESC - back to input", True, HINT_COLOR)
-    screen.blit(esc_hint, (x, panel_rect.bottom - 30))
+    screen.blit(esc_hint, (x, panel_rect.bottom - int(30 * UI_SCALE)))

@@ -10,6 +10,7 @@ from config import (
     TUTORIAL_EDGE_COLOR,
     TUTORIAL_HELPER_COLOR,
     TUTORIAL_PREDECESSOR_COLOR,
+    UI_SCALE,
     VERTEX_COLOR,
     VERTEX_DONE_COLOR,
     VERTEX_HOVER_COLOR,
@@ -37,9 +38,9 @@ def draw_polygon(screen, gp, vertices, done, hovered_point, vertex_labels=None, 
     if n < 1:
         return
 
-    idx_font = pygame.font.SysFont("Arial", 13, bold=True)
-    type_font = pygame.font.SysFont("Arial", 11, bold=True)
-    tag_font = pygame.font.SysFont("Arial", 11, bold=True)
+    idx_font = pygame.font.SysFont("Arial", int(13 * UI_SCALE), bold=True)
+    type_font = pygame.font.SysFont("Arial", int(11 * UI_SCALE), bold=True)
+    tag_font = pygame.font.SysFont("Arial", int(11 * UI_SCALE), bold=True)
     pts = [gp.pixel(gx, gy) for gx, gy in vertices]
 
     tut_edges = set()
@@ -93,29 +94,35 @@ def draw_polygon(screen, gp, vertices, done, hovered_point, vertex_labels=None, 
         if i == n - 1 and not done:
             continue
         c = edge_color
-        w = 3 if done else 2
+        w = int(3 * UI_SCALE) if done else int(2 * UI_SCALE)
+        if w < 1:
+            w = 1
         if e in hover_edges:
             c = HOVER_GLOW
-            w = 5
+            w = max(1, int(5 * UI_SCALE))
         elif e in tut_edges:
             if tutorial and e == tutorial.predecessor_edge:
                 c = TUTORIAL_PREDECESSOR_COLOR
             else:
                 c = TUTORIAL_EDGE_COLOR
-            w = 3
+            w = max(1, int(3 * UI_SCALE))
         a_pt = (int(pts[i][0]), int(pts[i][1]))
         b_pt = (int(pts[(i + 1) % n][0]), int(pts[(i + 1) % n][1]))
         pygame.draw.line(screen, c, a_pt, b_pt, w)
 
     if done and diagonals:
         for a, b in diagonals:
-            pygame.draw.line(screen, DIAGONAL_COLOR,
-                             (int(pts[a][0]), int(pts[a][1])),
-                             (int(pts[b][0]), int(pts[b][1])), 2)
+            pygame.draw.line(
+                screen,
+                DIAGONAL_COLOR,
+                (int(pts[a][0]), int(pts[a][1])),
+                (int(pts[b][0]), int(pts[b][1])),
+                max(1, int(2 * UI_SCALE)),
+            )
 
     if tutorial is not None:
         step = tutorial
-        edge_label_font = pygame.font.SysFont("Arial", 11, bold=True)
+        edge_label_font = pygame.font.SysFont("Arial", int(11 * UI_SCALE), bold=True)
         edge_label_map = {
             step.ei_prev: ("ei-1", TUTORIAL_EDGE_COLOR),
             step.ei_curr: ("ei", TUTORIAL_EDGE_COLOR),
@@ -131,10 +138,15 @@ def draw_polygon(screen, gp, vertices, done, hovered_point, vertex_labels=None, 
             lbl_color = HOVER_GLOW if is_hover else color
             lbl = edge_label_font.render(label, True, lbl_color)
             lx = int(mx) - lbl.get_width() // 2
-            ly = int(my) - lbl.get_height() - 6
-            bg = pygame.Rect(lx - 3, ly - 1, lbl.get_width() + 6, lbl.get_height() + 2)
-            pygame.draw.rect(screen, WHITE, bg, border_radius=3)
-            pygame.draw.rect(screen, lbl_color, bg, 1, border_radius=3)
+            ly = int(my) - lbl.get_height() - int(6 * UI_SCALE)
+            bg = pygame.Rect(
+                lx - int(3 * UI_SCALE),
+                ly - int(1 * UI_SCALE),
+                lbl.get_width() + int(6 * UI_SCALE),
+                lbl.get_height() + int(2 * UI_SCALE),
+            )
+            pygame.draw.rect(screen, WHITE, bg, border_radius=max(1, int(3 * UI_SCALE)))
+            pygame.draw.rect(screen, lbl_color, bg, max(1, int(1 * UI_SCALE)), border_radius=max(1, int(3 * UI_SCALE)))
             screen.blit(lbl, (lx, ly))
 
     for i, (px, py) in enumerate(pts):
@@ -145,11 +157,11 @@ def draw_polygon(screen, gp, vertices, done, hovered_point, vertex_labels=None, 
 
         r = VERTEX_RADIUS
         if is_hovered:
-            r += 2
+            r += max(1, int(2 * UI_SCALE))
         if is_active:
-            r += 5
+            r += max(1, int(5 * UI_SCALE))
         if is_hover_v and not is_active:
-            r += 4
+            r += max(1, int(4 * UI_SCALE))
 
         if done and vertex_labels:
             type_name = vertex_labels[i]
@@ -163,43 +175,48 @@ def draw_polygon(screen, gp, vertices, done, hovered_point, vertex_labels=None, 
         pygame.draw.circle(screen, c, (ipx, ipy), r)
 
         border_c = WHITE
-        border_w = 2
+        border_w = max(1, int(2 * UI_SCALE))
         if is_hover_v:
             border_c = HOVER_GLOW
-            border_w = 3
+            border_w = max(1, int(3 * UI_SCALE))
         elif i in tut_vertex_tags:
             _, tag_color = tut_vertex_tags[i]
             border_c = tag_color
-            border_w = 3
+            border_w = max(1, int(3 * UI_SCALE))
 
         pygame.draw.circle(screen, border_c, (ipx, ipy), r, border_w)
 
         if done or n > 1:
             idx_str = str(i)
             idx_surf = idx_font.render(idx_str, True, WHITE)
-            bw = idx_surf.get_width() + 8
-            bh = idx_surf.get_height() + 4
+            bw = idx_surf.get_width() + int(8 * UI_SCALE)
+            bh = idx_surf.get_height() + int(4 * UI_SCALE)
             lx = ipx - bw // 2
-            ly = ipy - r - bh - 4
+            ly = ipy - r - bh - int(4 * UI_SCALE)
 
             badge_color = LABEL_BG_COLOR if done else ACCENT
             if done and vertex_labels:
                 badge_color = VERTEX_TYPE_COLORS.get(vertex_labels[i], LABEL_BG_COLOR)
 
-            pygame.draw.rect(screen, badge_color, (lx, ly, bw, bh), border_radius=4)
-            screen.blit(idx_surf, (lx + 4, ly + 2))
+            pygame.draw.rect(screen, badge_color, (lx, ly, bw, bh), border_radius=max(1, int(4 * UI_SCALE)))
+            screen.blit(idx_surf, (lx + int(4 * UI_SCALE), ly + int(2 * UI_SCALE)))
 
         if done and vertex_labels:
             type_name = vertex_labels[i]
             type_surf = type_font.render(type_name, True, c)
-            screen.blit(type_surf, (ipx - type_surf.get_width() // 2, ipy + r + 4))
+            screen.blit(type_surf, (ipx - type_surf.get_width() // 2, ipy + r + int(4 * UI_SCALE)))
 
         if i in tut_vertex_tags:
             tag_text, tag_color = tut_vertex_tags[i]
             tag = tag_font.render(tag_text, True, tag_color)
             tag_x = ipx - tag.get_width() // 2
-            tag_y = ipy + r + 18
-            bg_rect = pygame.Rect(tag_x - 4, tag_y - 2, tag.get_width() + 8, tag.get_height() + 4)
-            pygame.draw.rect(screen, WHITE, bg_rect, border_radius=3)
-            pygame.draw.rect(screen, tag_color, bg_rect, 2, border_radius=3)
+            tag_y = ipy + r + int(18 * UI_SCALE)
+            bg_rect = pygame.Rect(
+                tag_x - int(4 * UI_SCALE),
+                tag_y - int(2 * UI_SCALE),
+                tag.get_width() + int(8 * UI_SCALE),
+                tag.get_height() + int(4 * UI_SCALE),
+            )
+            pygame.draw.rect(screen, WHITE, bg_rect, border_radius=max(1, int(3 * UI_SCALE)))
+            pygame.draw.rect(screen, tag_color, bg_rect, max(1, int(2 * UI_SCALE)), border_radius=max(1, int(3 * UI_SCALE)))
             screen.blit(tag, (tag_x, tag_y))

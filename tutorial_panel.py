@@ -17,6 +17,7 @@ from config import (
     TUTORIAL_HELPER_COLOR,
     TUTORIAL_PREDECESSOR_COLOR,
     TUTORIAL_ACTIVE_VERTEX,
+    UI_SCALE,
 )
 from sweep import PSEUDOCODE_SEGMENTS
 
@@ -31,24 +32,24 @@ HOVER_EDGE_INFO_CURR = "edge_info_curr"
 HOVER_EDGE_INFO_EJ = "edge_info_ej"
 
 _CODE_FONT = "Courier New"
-_CODE_SIZE = 13
-_CODE_BOLD_SIZE = 13
-_INFO_SIZE = 14
-_HEADER_SIZE = 16
-_SMALL_SIZE = 12
+_CODE_SIZE = int(13 * UI_SCALE)
+_CODE_BOLD_SIZE = int(13 * UI_SCALE)
+_INFO_SIZE = int(14 * UI_SCALE)
+_HEADER_SIZE = int(16 * UI_SCALE)
+_SMALL_SIZE = int(12 * UI_SCALE)
 
 HOVER_TEXT_COLOR = (100, 230, 255)
 HOVERABLE_COLOR = (220, 225, 235)
 NORMAL_CODE_COLOR = (180, 185, 195)
 ACTIVE_MARKER_COLOR = (80, 200, 120)
 
-_CODE_X_PAD = 12
-_HEADER_Y_OFFSET = 42
-_EDGE_INFO_Y_OFFSET = 68
-_VERTEX_HEADER_HOVER_H = 26
-_EDGE_HEADER_HOVER_H = 22
-_CODE_Y_OFFSET = 114
-_LINE_H = 22
+_CODE_X_PAD = int(12 * UI_SCALE)
+_HEADER_Y_OFFSET = int(42 * UI_SCALE)
+_EDGE_INFO_Y_OFFSET = int(68 * UI_SCALE)
+_VERTEX_HEADER_HOVER_H = int(26 * UI_SCALE)
+_EDGE_HEADER_HOVER_H = int(22 * UI_SCALE)
+_CODE_Y_OFFSET = int(114 * UI_SCALE)
+_LINE_H = int(22 * UI_SCALE)
 
 
 def compute_tutorial_hover(tut_state, mouse_pos, panel_rect):
@@ -58,12 +59,17 @@ def compute_tutorial_hover(tut_state, mouse_pos, panel_rect):
     if step is None:
         return None
 
-    header_rect = pygame.Rect(panel_rect.x + 16, panel_rect.y + _HEADER_Y_OFFSET, 400, _VERTEX_HEADER_HOVER_H)
+    header_rect = pygame.Rect(
+        panel_rect.x + int(16 * UI_SCALE),
+        panel_rect.y + _HEADER_Y_OFFSET,
+        int(400 * UI_SCALE),
+        _VERTEX_HEADER_HOVER_H,
+    )
     if header_rect.collidepoint(mouse_pos):
         return {HOVER_VI}
 
     segments = PSEUDOCODE_SEGMENTS.get(step.pseudocode_key, [])
-    code_x = panel_rect.x + 16 + _CODE_X_PAD
+    code_x = panel_rect.x + int(16 * UI_SCALE) + _CODE_X_PAD
     code_y = panel_rect.y + _CODE_Y_OFFSET
 
     font = pygame.font.SysFont(_CODE_FONT, _CODE_SIZE)
@@ -83,7 +89,7 @@ def compute_tutorial_hover(tut_state, mouse_pos, panel_rect):
         code_y += _LINE_H
 
     edge_info_y = panel_rect.y + _EDGE_INFO_Y_OFFSET
-    edge_info_x = panel_rect.x + 16
+    edge_info_x = panel_rect.x + int(16 * UI_SCALE)
     small_font = pygame.font.SysFont("Arial", _SMALL_SIZE)
 
     ei_prev_str = f"ei-1 = e({step.ei_prev[0]},{step.ei_prev[1]})"
@@ -100,7 +106,12 @@ def compute_tutorial_hover(tut_state, mouse_pos, panel_rect):
 
     if step.predecessor_edge is not None:
         ej_str = f"ej = e({step.predecessor_edge[0]},{step.predecessor_edge[1]})"
-        r3 = pygame.Rect(edge_info_x + tw1 + tw2, edge_info_y, len(ej_str) * 8 + 10, _EDGE_HEADER_HOVER_H)
+        r3 = pygame.Rect(
+            edge_info_x + tw1 + tw2,
+            edge_info_y,
+            len(ej_str) * int(8 * UI_SCALE) + int(10 * UI_SCALE),
+            _EDGE_HEADER_HOVER_H,
+        )
         if r3.collidepoint(mouse_pos):
             return {HOVER_EDGE_INFO_EJ}
 
@@ -109,12 +120,17 @@ def compute_tutorial_hover(tut_state, mouse_pos, panel_rect):
     if step is None:
         return None
 
-    header_rect = pygame.Rect(panel_rect.x + 16, panel_rect.y + _HEADER_Y_OFFSET, 400, 26)
+    header_rect = pygame.Rect(
+        panel_rect.x + int(16 * UI_SCALE),
+        panel_rect.y + _HEADER_Y_OFFSET,
+        int(400 * UI_SCALE),
+        int(26 * UI_SCALE),
+    )
     if header_rect.collidepoint(mouse_pos):
         return {HOVER_VI}
 
     segments = PSEUDOCODE_SEGMENTS.get(step.pseudocode_key, [])
-    code_x = panel_rect.x + 16 + _CODE_X_PAD
+    code_x = panel_rect.x + int(16 * UI_SCALE) + _CODE_X_PAD
     code_y = panel_rect.y + _CODE_Y_OFFSET
 
     font = pygame.font.SysFont(_CODE_FONT, _CODE_SIZE)
@@ -141,9 +157,9 @@ def draw_tutorial_panel(screen, panel_rect, tut_state, btn_prev, btn_next, btn_e
     pygame.draw.rect(screen, PANEL_BG, panel_rect)
     pygame.draw.line(screen, PANEL_BORDER, (0, panel_rect.y), (panel_rect.width, panel_rect.y), 2)
 
-    x = 16
-    left_w = (panel_rect.width - 64) // 2
-    right_col_x = x + left_w + 32
+    x = int(16 * UI_SCALE)
+    left_w = (panel_rect.width - int(64 * UI_SCALE)) // 2
+    right_col_x = x + left_w + int(32 * UI_SCALE)
 
     header_font = pygame.font.SysFont(_CODE_FONT, _HEADER_SIZE, bold=True)
     info_font = pygame.font.SysFont("Arial", _INFO_SIZE)
@@ -152,16 +168,16 @@ def draw_tutorial_panel(screen, panel_rect, tut_state, btn_prev, btn_next, btn_e
     code_font = pygame.font.SysFont(_CODE_FONT, _CODE_SIZE)
     code_bold = pygame.font.SysFont(_CODE_FONT, _CODE_BOLD_SIZE, bold=True)
 
-    y = panel_rect.y + 12
+    y = panel_rect.y + int(12 * UI_SCALE)
     title = header_font.render("MAKE MONOTONE - Step by Step", True, TITLE_COLOR)
     screen.blit(title, (x, y))
-    y += 30
+    y += int(30 * UI_SCALE)
 
     step = tut_state.preview()
     if step is None:
-        done_font = pygame.font.SysFont("Arial", 20, bold=True)
+        done_font = pygame.font.SysFont("Arial", int(20 * UI_SCALE), bold=True)
         done_surf = done_font.render("Algorithm complete!", True, BUTTON_GREEN)
-        screen.blit(done_surf, (x + 20, y + 20))
+        screen.blit(done_surf, (x + int(20 * UI_SCALE), y + int(20 * UI_SCALE)))
         btn_exit.draw(screen)
         return
 
@@ -178,7 +194,7 @@ def draw_tutorial_panel(screen, panel_rect, tut_state, btn_prev, btn_next, btn_e
         highlight_surf.fill((*vtype_color, 50))
         screen.blit(highlight_surf, vertex_label_rect)
         screen.blit(vertex_label_surf, vertex_label_rect)
-    y += 26
+    y += int(26 * UI_SCALE)
 
     edge_info_y = y
     ei_prev_str = f"ei-1 = e({step.ei_prev[0]},{step.ei_prev[1]})"
@@ -186,11 +202,11 @@ def draw_tutorial_panel(screen, panel_rect, tut_state, btn_prev, btn_next, btn_e
 
     ei_prev_surf = small_font.render(ei_prev_str, True, TUTORIAL_EDGE_COLOR)
     screen.blit(ei_prev_surf, (x, edge_info_y))
-    prev_w = ei_prev_surf.get_width() + 20
+    prev_w = ei_prev_surf.get_width() + int(20 * UI_SCALE)
 
     ei_curr_surf = small_font.render(ei_curr_str, True, TUTORIAL_EDGE_COLOR)
     screen.blit(ei_curr_surf, (x + prev_w, edge_info_y))
-    curr_w = ei_curr_surf.get_width() + 20
+    curr_w = ei_curr_surf.get_width() + int(20 * UI_SCALE)
 
     if step.predecessor_edge is not None:
         ej_str = f"ej = e({step.predecessor_edge[0]},{step.predecessor_edge[1]})"
@@ -213,28 +229,44 @@ def draw_tutorial_panel(screen, panel_rect, tut_state, btn_prev, btn_next, btn_e
         hs.fill((160, 120, 255, 50))
         screen.blit(hs, hr)
 
-    y += 22
+    y += int(22 * UI_SCALE)
 
     progress = small_font.render(
         f"Step {tut_state.step_number} / {tut_state.total_steps}", True, HINT_COLOR
     )
     screen.blit(progress, (x, y))
-    y += 24
+    y += int(24 * UI_SCALE)
 
     segments = PSEUDOCODE_SEGMENTS.get(step.pseudocode_key, [])
     active_lines = set(step.active_lines)
     code_x = x + _CODE_X_PAD
 
     code_block_h = len(segments) * _LINE_H + 12
-    pygame.draw.rect(screen, TUTORIAL_CODE_BG, (x - 6, y - 4, left_w + 12, code_block_h), border_radius=5)
-    pygame.draw.rect(screen, TUTORIAL_CODE_BORDER, (x - 6, y - 4, left_w + 12, code_block_h), 1, border_radius=5)
+    pygame.draw.rect(
+        screen,
+        TUTORIAL_CODE_BG,
+        (x - int(6 * UI_SCALE), y - int(4 * UI_SCALE), left_w + int(12 * UI_SCALE), code_block_h),
+        border_radius=max(1, int(5 * UI_SCALE)),
+    )
+    pygame.draw.rect(
+        screen,
+        TUTORIAL_CODE_BORDER,
+        (x - int(6 * UI_SCALE), y - int(4 * UI_SCALE), left_w + int(12 * UI_SCALE), code_block_h),
+        max(1, int(1 * UI_SCALE)),
+        border_radius=max(1, int(5 * UI_SCALE)),
+    )
 
     for line_idx, line_segments in enumerate(segments):
         ly = y + line_idx * _LINE_H
         is_active = line_idx in active_lines
 
         if is_active:
-            pygame.draw.rect(screen, ACTIVE_MARKER_COLOR, (x - 2, ly + 4, 3, _LINE_H - 8), border_radius=1)
+            pygame.draw.rect(
+                screen,
+                ACTIVE_MARKER_COLOR,
+                (x - int(2 * UI_SCALE), ly + int(4 * UI_SCALE), max(1, int(3 * UI_SCALE)), _LINE_H - int(8 * UI_SCALE)),
+                border_radius=max(1, int(1 * UI_SCALE)),
+            )
 
         cx = code_x
         for text, hover_key in line_segments:
@@ -251,19 +283,19 @@ def draw_tutorial_panel(screen, panel_rect, tut_state, btn_prev, btn_next, btn_e
                 fnt = code_font
 
             surf = fnt.render(text, True, color)
-            screen.blit(surf, (cx, ly + 1))
+            screen.blit(surf, (cx, ly + int(1 * UI_SCALE)))
             cx += surf.get_width()
 
-    right_y = panel_rect.y + 12
+    right_y = panel_rect.y + int(12 * UI_SCALE)
     tree_header = info_font_bold.render("Status Tree (left to right):", True, DARK_GRAY)
     screen.blit(tree_header, (right_col_x, right_y))
-    right_y += 22
+    right_y += int(22 * UI_SCALE)
 
     tree = step.tree_before
     if not tree:
         empty = small_font.render("(empty)", True, HINT_COLOR)
-        screen.blit(empty, (right_col_x + 8, right_y))
-        right_y += 18
+        screen.blit(empty, (right_col_x + int(8 * UI_SCALE), right_y))
+        right_y += int(18 * UI_SCALE)
     else:
         for edge, helper in tree:
             a, b = edge
@@ -276,29 +308,29 @@ def draw_tutorial_panel(screen, panel_rect, tut_state, btn_prev, btn_next, btn_e
                 surf = code_bold.render(entry_str, True, HOVER_TEXT_COLOR)
             else:
                 surf = code_font.render(entry_str, True, BLACK)
-            screen.blit(surf, (right_col_x + 4, right_y))
-            right_y += 17
+            screen.blit(surf, (right_col_x + int(4 * UI_SCALE), right_y))
+            right_y += int(17 * UI_SCALE)
 
-    right_y += 14
+    right_y += int(14 * UI_SCALE)
     diags_header = info_font_bold.render("Diagonals added this step:", True, DARK_GRAY)
     screen.blit(diags_header, (right_col_x, right_y))
-    right_y += 20
+    right_y += int(20 * UI_SCALE)
 
     new_diags = [d for d in step.diagonals_after if d not in step.diagonals_before]
     if new_diags:
         for a, b in new_diags:
             d_str = f"v{a} -- v{b}"
             surf = code_font.render(d_str, True, (200, 130, 30))
-            screen.blit(surf, (right_col_x + 4, right_y))
-            right_y += 17
+            screen.blit(surf, (right_col_x + int(4 * UI_SCALE), right_y))
+            right_y += int(17 * UI_SCALE)
     else:
         none_surf = small_font.render("(none)", True, HINT_COLOR)
-        screen.blit(none_surf, (right_col_x + 4, right_y))
+        screen.blit(none_surf, (right_col_x + int(4 * UI_SCALE), right_y))
 
-    right_y += 20
+    right_y += int(20 * UI_SCALE)
     legend_header = info_font_bold.render("Legend:", True, DARK_GRAY)
     screen.blit(legend_header, (right_col_x, right_y))
-    right_y += 20
+    right_y += int(20 * UI_SCALE)
 
     legend_items = [
         (TUTORIAL_ACTIVE_VERTEX, "Current vertex (vi)"),
@@ -309,14 +341,19 @@ def draw_tutorial_panel(screen, panel_rect, tut_state, btn_prev, btn_next, btn_e
         (DIAGONAL_COLOR, "Diagonals"),
     ]
     for color, label in legend_items:
-        pygame.draw.rect(screen, color, (right_col_x + 4, right_y + 1, 14, 10), border_radius=2)
+        pygame.draw.rect(
+            screen,
+            color,
+            (right_col_x + int(4 * UI_SCALE), right_y + int(1 * UI_SCALE), int(14 * UI_SCALE), int(10 * UI_SCALE)),
+            border_radius=max(1, int(2 * UI_SCALE)),
+        )
         surf = small_font.render(label, True, DARK_GRAY)
-        screen.blit(surf, (right_col_x + 24, right_y))
-        right_y += 17
+        screen.blit(surf, (right_col_x + int(24 * UI_SCALE), right_y))
+        right_y += int(17 * UI_SCALE)
 
     btn_prev.draw(screen, enabled=(not tut_state.at_start()))
     btn_next.draw(screen, enabled=(not tut_state.at_end()))
     btn_exit.draw(screen)
 
     esc_hint = small_font.render("ESC - back to results", True, HINT_COLOR)
-    screen.blit(esc_hint, (x, panel_rect.bottom - 24))
+    screen.blit(esc_hint, (x, panel_rect.bottom - int(24 * UI_SCALE)))

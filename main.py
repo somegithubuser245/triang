@@ -8,12 +8,17 @@ from config import (
     BUTTON_GREEN_HOVER,
     BUTTON_RED,
     BUTTON_RED_HOVER,
+    DISPLAY_FLAGS,
     FPS,
     GRID_MARGIN,
+    HEIGHT,
     INPUT_ACTIVE_BORDER,
     INPUT_BORDER,
     PANEL_W,
     TITLE_COLOR,
+    TUTORIAL_PANEL_H,
+    UI_SCALE,
+    WIDTH,
 )
 from geometry import Vec2, classify_polygon, ensure_ccw
 from grid import GridParams, draw_grid
@@ -25,12 +30,11 @@ from tutorial import TutorialState
 from tutorial_panel import compute_tutorial_hover, draw_tutorial_panel
 from ui import Button, InputBox
 
-GRID_AREA_W = 960 - PANEL_W - 2 * GRID_MARGIN
-GRID_AREA_H = 720 - 2 * GRID_MARGIN
+GRID_AREA_W = WIDTH - PANEL_W - 2 * GRID_MARGIN
+GRID_AREA_H = HEIGHT - 2 * GRID_MARGIN
 MAX_DIM = 200
-GRID_W = 960
-GRID_H = 720
-TUTORIAL_PANEL_H = 440
+GRID_W = WIDTH
+GRID_H = HEIGHT
 WINDOW_H = GRID_H + TUTORIAL_PANEL_H
 
 
@@ -62,26 +66,27 @@ def _reset_polygon():
 class App:
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((GRID_W, WINDOW_H))
+        self.screen = pygame.display.set_mode((GRID_W, WINDOW_H), DISPLAY_FLAGS)
         pygame.display.set_caption("Polygon Triangulation Tutorial")
         self.clock = pygame.time.Clock()
 
         cx = GRID_W // 2
-        self.input_x = InputBox(cx - 130, 280, 260, 40, label="Width (X)", hint="e.g. 20")
-        self.input_y = InputBox(cx - 130, 370, 260, 40, label="Height (Y)", hint="e.g. 20")
-        self.btn_draw = Button(cx - 80, 460, 160, 48, "Draw")
+        self.input_x = InputBox(cx - int(130 * UI_SCALE), int(280 * UI_SCALE), int(260 * UI_SCALE), int(40 * UI_SCALE), label="Width (X)", hint="e.g. 20")
+        self.input_y = InputBox(cx - int(130 * UI_SCALE), int(370 * UI_SCALE), int(260 * UI_SCALE), int(40 * UI_SCALE), label="Height (Y)", hint="e.g. 20")
+        self.btn_draw = Button(cx - int(80 * UI_SCALE), int(460 * UI_SCALE), int(160 * UI_SCALE), int(48 * UI_SCALE), "Draw")
 
-        self.panel_rect = pygame.Rect(GRID_W - PANEL_W, 0, PANEL_W, GRID_H)
+        panel_w = PANEL_W
+        self.panel_rect = pygame.Rect(GRID_W - panel_w, 0, panel_w, GRID_H)
         self.tutorial_panel_rect = pygame.Rect(0, GRID_H, GRID_W, TUTORIAL_PANEL_H)
-        px = self.panel_rect.x + 16
+        px = self.panel_rect.x + int(16 * UI_SCALE)
 
-        self.btn_create = Button(px, 200, PANEL_W - 32, 40, "Create", BUTTON_GREEN, BUTTON_GREEN_HOVER)
-        self.btn_delete = Button(px, 250, PANEL_W - 32, 40, "Delete", BUTTON_RED, BUTTON_RED_HOVER)
-        self.btn_tutorial = Button(px, 360, PANEL_W - 32, 40, "Tutorial")
+        self.btn_create = Button(px, int(200 * UI_SCALE), panel_w - int(32 * UI_SCALE), int(40 * UI_SCALE), "Create", BUTTON_GREEN, BUTTON_GREEN_HOVER)
+        self.btn_delete = Button(px, int(250 * UI_SCALE), panel_w - int(32 * UI_SCALE), int(40 * UI_SCALE), "Delete", BUTTON_RED, BUTTON_RED_HOVER)
+        self.btn_tutorial = Button(px, int(360 * UI_SCALE), panel_w - int(32 * UI_SCALE), int(40 * UI_SCALE), "Tutorial")
 
-        self.btn_prev = Button(16, GRID_H + TUTORIAL_PANEL_H - 50, 88, 32, "< Prev", BUTTON_GREEN, BUTTON_GREEN_HOVER)
-        self.btn_next = Button(114, GRID_H + TUTORIAL_PANEL_H - 50, 88, 32, "Next >", BUTTON_GREEN, BUTTON_GREEN_HOVER)
-        self.btn_exit = Button(216, GRID_H + TUTORIAL_PANEL_H - 50, 88, 32, "Exit")
+        self.btn_prev = Button(int(16 * UI_SCALE), GRID_H + TUTORIAL_PANEL_H - int(50 * UI_SCALE), int(88 * UI_SCALE), int(32 * UI_SCALE), "< Prev", BUTTON_GREEN, BUTTON_GREEN_HOVER)
+        self.btn_next = Button(int(114 * UI_SCALE), GRID_H + TUTORIAL_PANEL_H - int(50 * UI_SCALE), int(88 * UI_SCALE), int(32 * UI_SCALE), "Next >", BUTTON_GREEN, BUTTON_GREEN_HOVER)
+        self.btn_exit = Button(int(216 * UI_SCALE), GRID_H + TUTORIAL_PANEL_H - int(50 * UI_SCALE), int(88 * UI_SCALE), int(32 * UI_SCALE), "Exit")
 
         self.state = "input"
         self.dim_x = 0.0
@@ -224,9 +229,9 @@ class App:
                 hover_highlight=self.hover_highlight,
             )
 
-            title_font = pygame.font.SysFont("Arial", 18, bold=True)
+            title_font = pygame.font.SysFont("Arial", int(18 * UI_SCALE), bold=True)
             title = title_font.render(f"Plane {self.dim_x} x {self.dim_y}", True, TITLE_COLOR)
-            self.screen.blit(title, (GRID_MARGIN, 10))
+            self.screen.blit(title, (GRID_MARGIN, int(10 * UI_SCALE)))
 
             if self.mode == "tutorial" and self.tutorial:
                 draw_panel(
